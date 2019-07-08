@@ -1,0 +1,155 @@
+/* 0.4.0Version */
+/*===================================================================================================================================*/
+/*  Copyright Grizz Corporation                                                                                                      */
+/*===================================================================================================================================*/
+/*  @Domain Grizz Eat    //App/Module                                                                                                                        */
+/*===================================================================================================================================*/
+#ifndef Grizz_Eat
+#define Grizz_Eat
+
+#define ALTAPP_4WD_CFG_PRM_MAJOR            (0)
+#define ALTAPP_4WD_CFG_PRM_MINOR            (4)
+#define ALTAPP_4WD_CFG_PRM_PATCH            (0)
+
+/***  パラメータファイルの名称はその部品名とすること。                        */
+/***  部品名（＜ドメイン略称(表 5 1参照)＞＜機能の略称(表 5 2参照)＞）.prm    */
+
+
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+/*  Version                                                                                                                          */
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+#define GRIZZ_EAT_PRM_MAJOR        //ALTAPP_4WD_CFG_PRM_MAJOR            (0)
+#define GRIZZ_EAT_PRM_MINOR        //ALTAPP_4WD_CFG_PRM_MINOR            (4)
+#define GRIZZ_EAT_PRM_PATCH        //ALTAPP_4WD_CFG_PRM_PATCH            (0)
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+/*  Include Files                                                                                                                    */
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+#include "grizz_common.h"   //引入底层common支援 "altapp_common.h"
+#include "grizz_eat.h"      //引入自己的对外支援 "altapp_4wd.h"
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+/*  Type Definitions                                                                                                                 */
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+
+/*例子Instance
+typedef struct{
+    U1 u1_index;                                                               /* Index                                              */
+    U1 u1_vhvlinfo_clr;                                                        /* Vehicle Info Power Countor Clear                   */
+    U2 u2_igvolt;                                                              /* IG Volt                                            */
+    U2 u2_msktim;                                                              /* Mask time                                          */
+    U1 u1_vhvlinfo_pow;                                                        /* Vehicle Info Power                                 */
+    U1 u1_vhvlinfo_msk;                                                        /* Vehicle Info Mask                                  */
+}ST_ALT_VHCLINFO_MSKTIM_INFO;
+*/
+
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+/*  Defines                                                                                                                          */
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+#define ALT_VI_SGNL_RFRSHMSK                (0x1F)
+#define ALT_VI_EDGSGNL_RFRSHMSK             (0x77)
+
+#define ALT_VI_INIT                         (0x00)
+
+/* 走行可能判定 */
+#define ALT_VI_TACHSIG_FAIL                 (TACHCTLSGNL_FAIL)
+#define ALT_VI_TACHSIG_ENGSTRTD             (TACHCTLSGNL_ENGSTRTD)
+
+/* Speed mode定義 */
+#define ALT_VI_SPDMODE_STOP                 (VHCLSPD_STOPD)
+#define ALT_VI_SPDMODE_UP                   (VHCLSPD_SPDUP)
+#define ALT_VI_SPDMODE_RUN                  (VHCLSPD_RUN)
+#define ALT_VI_SPDMODE_DOWN                 (VHCLSPD_SPDDWN)
+
+#define ALT_VI_INSPISOFF                    (FALSE)
+
+#define ALT_VI_MSKTIM_INFO_MAX              (3)
+
+#define ALT_VI_ECOMODE3_MSK                 (0x0F)
+#define ALT_VI_ECOMODE3_VALID               (0x001E)
+
+#define ALT_VI_ENGSYS_NUM                   (4)
+
+#define ALT_VI_COM_TIMEOUT                  (SPF_CCOM_TIMEOUT)
+#define ALT_VI_COM_NORX                     (SPF_CCOM_NO_RX)
+
+#define __ALT_VI_RUNFLG_DRDYSTS_SUP__       (0)                                /* 0:RDYINDを使用     1:DRDYSTSを使用                 */
+
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+/*  Macros                                                                                                                           */
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+#define u1_ALT_VI_IGISON()                  (u1_g_VehopemdIgnOn())
+#define u1_ALT_VI_BZIGISON()                (u1_g_AltFixHwInpt((U2)IOHW_DISGNL_IGBZ))
+#define u1_ALT_VI_ECORUNSTISON()            (u1_g_VehopemdMstaOn())
+#define u1_ALT_VI_RDYISON()                 (u1_g_VehopemdRdyOn())
+#define u1_ALT_VI_INSPISON()                (u1_g_InspectModeIsAct())
+
+/* 走行可能判定 */
+#define u1_ALT_VI_GET_ENGSYS_HV()           (u1_g_VardefEngsysIsHybrid())
+#define u1_ALT_VI_GET_ENGSYS_CONV()         (u1_g_VardefEngsysIsConv())
+#define u1_ALT_VI_GET_ENGSTS()              (u1_g_TachctlSgnlSts((U2)(3600/TACHCTL_TICKTIM)))
+
+#if(__ALT_VI_RUNFLG_DRDYSTS_SUP__ == 1)
+#ifdef spf_ccom_UD_F_DAT_RX0_DRDYSTS
+#define __ALT_VI_RUNFLG_SUP__               (1)                                    /* 0:NonSupport 1:Support             */
+#define u1_ALT_VI_GETSTS_RUNFLG()           (u1_g_AltGetCanFrmsts((SpfCcomDataHandlerType)DAT_RX0_DRDYSTS))
+#else
+#define __ALT_VI_RUNFLG_SUP__               (0)                                    /* 0:NonSupport 1:Support             */
+#endif
+#else
+#ifdef spf_ccom_UD_F_DAT_RX0_RDYIND
+#define __ALT_VI_RUNFLG_SUP__               (1)                                    /* 0:NonSupport 1:Support             */
+#define u1_ALT_VI_GETSTS_RUNFLG()           (u1_g_AltGetCanFrmsts((SpfCcomDataHandlerType)DAT_RX0_RDYIND))
+#else
+#define __ALT_VI_RUNFLG_SUP__               (0)                                    /* 0:NonSupport 1:Support             */
+#endif
+#endif
+
+#define u1_ALT_VI_GET_SPDMODE()             (u1_g_SpdmkrcfgGetVhclSpd())
+
+#define u1_ALT_VHCLINFO_GET_IGLV(retval)    (u1_g_IoHwAdcRead((U1)ADC_CH_IG_MON,(retval)))
+#define u1_ALT_VI_GET_ECORUN_SUPD()         (u1_g_VardefEcoRunIsSupd())
+
+#ifdef spf_ccom_UD_F_DAT_RX0_ECOMODE3
+#define u1_ALT_VI_GETSTS_ECO1S90()          (u1_g_AltGetCanFrmsts((SpfCcomDataHandlerType)DAT_RX0_ECOMODE3))
+#else
+#define u1_ALT_VI_GETSTS_ECO1S90()          (u1_g_AltGetCanFrmsts((SpfCcomDataHandlerType)0))
+#endif
+#ifdef spf_ccom_UD_F_DAT_RX0_ECOMODE3
+#define u1_ALT_VI_GET_ECOMODE3()            ((U1)spf_ccom_RefRead(DAT_RX0_ECOMODE3))
+#else
+#define u1_ALT_VI_GET_ECOMODE3()            ((U1)FALSE)
+#endif
+
+#define vd_ALT_VI_COPYU2(u2_ap_cpydst, u2_ap_cpysrc, u4_a_num_half)  (vd_g_MemcpyU2((u2_ap_cpydst), (u2_ap_cpysrc), (u4_a_num_half)))
+
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+/*  Constant Variable Definitions                                                                                                    */
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+static const ST_ALT_VHCLINFO_MSKTIM_INFO   st_ALT_VHCLINFO_MSKTIM_INFO[ALT_VI_MSKTIM_INFO_MAX] = {
+    {(U1)ALT_VI_TIM_IGON_10V_5S_IDX,      (U1)FALSE, (U2)510, (U2)(5000/ALT_TASK_RATE), (U1)(ALT_VI_DTCTEDGMSK_IGON),     (U1)(ALT_VI_DTCTMSK_IGONEDG)     },   /* IG状態    */
+    {(U1)ALT_VI_TIM_ECRNSTOFF_10V_5S_IDX, (U1)TRUE,  (U2)510, (U2)(5000/ALT_TASK_RATE), (U1)(ALT_VI_DTCTEDGMSK_ECRNSTON), (U1)(ALT_VI_DTCTMSK_ECRNSTOFFEDG)},   /* ST状態    */
+    {(U1)ALT_VI_TIM_RDYON_10V_5S_IDX,     (U1)FALSE, (U2)510, (U2)(5000/ALT_TASK_RATE), (U1)(ALT_VI_DTCTEDGMSK_NOMASK),   (U1)(ALT_VI_DTCTMSK_RDYONEDG    )}    /* READY状態 */
+};
+
+static const U1 u1_ALT_VI_ENGSYS[ALT_VI_ENGSYS_NUM] = {
+                                                                                /* bit1:CONV / bit0:HV                               */
+    (U1)TRUE,                                                                   /* 00:HV                                             */
+    (U1)TRUE,                                                                   /* 01:HV                                             */
+    (U1)FALSE,                                                                  /* 10:CONV                                           */
+    (U1)TRUE                                                                    /* 11:HV                                             */
+};
+
+/***** 経過時間用Config ***************************************************/
+static const U2 u2_ALT_VI_TIM_INITVAL[ALT_VI_TIM_IDX_NUM] = {
+    (U2)0,                                                                      /* 0:IG ON                                            */
+    (U2)0,                                                                      /* 1:IG ON 10V未満 5sec                               */
+    (U2)0xFFFF,                                                                 /* 2:ST/MSTART OFF 10V未満 5sec                       */
+    (U2)0                                                                       /* 3:READY ON 10V未満 5sec                            */
+};
+
+#endif /* ALT_VHCLINFO_CFG_PRM */
+
+/*===================================================================================================================================*/
+/*                                                                                                                                   */
+/*  Change History : see alt_vhclinfo.c                                                                                              */
+/*                                                                                                                                   */
+/*===================================================================================================================================*/

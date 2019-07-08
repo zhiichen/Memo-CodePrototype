@@ -1,0 +1,148 @@
+/* 0.0.0Version */
+/*===================================================================================================================================*/
+/*  Copyright Grizz Solo Player Corporation                                                                                                     */
+/*===================================================================================================================================*/
+/*  Grizz's Demo     //App/Module                                                                          */
+/*===================================================================================================================================*/
+
+#ifndef GRIZZDEMO
+#define GRIZZDEMO
+
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+/*  Version                                                                                                                          */
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+#define VDFWRNG_PRM_MAJOR                  (1)
+#define VDFWRNG_PRM_MINOR                  (2)
+#define VDFWRNG_PRM_PATCH                  (0)
+
+/***  パラメータファイルの名称はその部品名とすること。                        */
+/***  部品名（＜ドメイン略称(表 5 1参照)＞＜機能の略称(表 5 2参照)＞）.prm    */
+
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+/*  Include Files                                                                                                                    */
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+#include "aip_common.h"
+
+#include "diagwritedata.h"
+
+#include "vardef.h"
+
+#include "grizz_common.h"   //引入底层common支援 "altapp_common.h"
+#include "grizz_eat.h"      //引入自己的对外支援 "altapp_4wd.h"
+
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+/*  Type Definitions                                                                                                                 */
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+
+/*例子Instance
+typedef struct{
+    U1 u1_index;                                                               /* Index                                              */
+    U1 u1_vhvlinfo_clr;                                                        /* Vehicle Info Power Countor Clear                   */
+    U2 u2_igvolt;                                                              /* IG Volt                                            */
+    U2 u2_msktim;                                                              /* Mask time                                          */
+    U1 u1_vhvlinfo_pow;                                                        /* Vehicle Info Power                                 */
+    U1 u1_vhvlinfo_msk;                                                        /* Vehicle Info Mask                                  */
+}ST_ALT_VHCLINFO_MSKTIM_INFO;
+*/
+
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+/*  Definitions            //多是等于一个什么数 
+     //機種毎にカスタマイズして扱う定義（ただし、外部公開する場合はHファイルで定義する                                                                                       */
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+
+#define ALT_VI_SGNL_RFRSHMSK                (0x1F)
+#define ALT_VI_EDGSGNL_RFRSHMSK             (0x77)
+
+#define ALT_VI_INIT                         (0x00)
+
+/* 走行可能判定 */
+#define ALT_VI_TACHSIG_FAIL                 (TACHCTLSGNL_FAIL)
+#define ALT_VI_TACHSIG_ENGSTRTD             (TACHCTLSGNL_ENGSTRTD)
+
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+/*  Macros                  //什么什么函数等             
+      //他部品・ドメインの関数・変数等の置き換え                                                                                            */
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+#define u1_VDFWRNG_TTLOWFUEL()          ((U1)u4_g_VardefVarDBField((U1)7,  (U1)31, (U4)TRUE))
+#define u1_VDFWRNG_TTMASTER()           ((U1)u4_g_VardefVarDBField((U1)7,  (U1)29, (U4)TRUE))
+
+/*  Buzzer Support Notification API Definitions                                                                                     */
+#define u2_VDFWRNG_BLTWNGCFG()          (u2_g_VardefGetBeltCfg())
+#define VDFWRNG_BZBLTCFGLSB             (3)
+#define VDFWRNG_BZBLTCFGMSK             (0x0FFF)
+
+#define VDFWRNG_BZBLTNONSUP             (0x0000)
+#define VDFWRNG_BZDBLTMSK               (DIAGWRDATA_BELTBZ_D)
+#define VDFWRNG_BZPBLTMSK               (DIAGWRDATA_BELTBZ_P)
+fine VDFWRNG_BZBLTRR4_ON             (0x0100)
+#define VDFWRNG_BZBLTRC4_ON             (0x0200)
+#define VDFWRNG_BZBLTRL4_ON             (0x0400)
+#define VDFWRNG_BZBLTRC_ON              (0x0800)
+
+#define u2_VDFWRNG_DG2EBZBLT()          (u2_g_DiagWrdata_GetTailBltSet())
+                                                /* bit6 ： D-Belt      -> bit0 */
+                                                /* bit5 ： P-Belt      -> bit1 */
+                                                /* bit2 ： Rr-Belt(R)  -> bit2 */
+                                                /* bit0 ： Rr-Belt(C)  -> bit3 */
+                                                /* bit1 ： Rr-Belt(L)  -> bit4 */
+
+#define u1_VDFWRNG_BZSPDALTSUP()        (u1_g_VardefBzDiagSpdAltIsSupd())
+#define u1_VDFWRNG_DG2EBZSPDALT()       (u1_g_DiagWrdata_GetBzSet())
+#define VDFWRNG_SPDALTLSB               (7)
+#define VDFWRNG_SPDALTMSK               (0x01)
+
+#define u1_VDFWRNG_BZLGHRMDSUP()        (u1_g_VardefBzDiagLghRmdIsSupd())
+#define u2_VDFWRNG_DG2EBZLGHRMD()       (u2_g_DiagWrdata_GetTailBltSet())
+#define VDFWRNG_LGHRMDLSB               (7)
+#define VDFWRNG_LGHRMDMSK               (0x0001)
+
+#define u1_VDFWRNG_TMINF()              (u1_g_VardefTrmIsSupd())
+
+/*  Remote-Waning Contents Support Notification API Definitions                                                                     */
+#define u1_VDFWRNG_RMTABS()             ((U1)FALSE)                                      /* 未使用I/FのためFALSE固定                */
+#define u1_VDFWRNG_RMTVSC()             (u1_g_VardefVscIsSupd())
+#define u1_VDFWRNG_RMTBRAKE()           ((U1)FALSE)                                      /* 未使用I/FのためFALSE固定                */
+#define u1_VDFWRNG_RMTAHS()             ((U1)FALSE)                                      /* 未使用I/FのためFALSE固定                */
+#define u1_VDFWRNG_RMTLKA()             (u1_g_VardefLkaIsSupd())                         /* Remote Warning LKAW Support              */
+#define u1_VDFWRNG_RMTLTA()             (u1_g_VardefLtcIsSupd())                         /* Remote Warning LTAW Support              */
+
+#define u1_VDFWRNG_ENGSYS_HV()          (u1_g_VardefEngsysIsHybrid())                    /* エンジンシステム                         */
+#define VDFWRNG_ENG_CONV                (0)                                              /* エンジンシステム:Conv                    */
+#define VDFWRNG_ENG_HV                  (1)                                              /* エンジンシステム:HV                      */
+#define u1_VDFWRNG_ENGTYPE()            (u1_g_VardefEngIdGetData())                      /* エンジン型式                             */
+#define VDFWRNG_RPM_CONVDEF             (0)                                              /* エンジン回転数Convデフォルトタイプ       */
+#define VDFWRNG_RPM_HVDEF               (0)                                              /* エンジン回転数HVデフォルトタイプ         */
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+/*  Constant Variable Definitions       車両毎にカスタマイズして扱う定義                                                             */
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+#define VDFWRNG_ENGSYS_NUM              (2)                                              /* エンジンシステム数                       */
+#define VDFWRNG_ENGTYPE_NUM             (NUM_VDFENG)                                     /* エンジン型式数                           */
+static const U1 u1_VDFWRNG_RPMTYPE[VDFWRNG_ENGSYS_NUM][VDFWRNG_ENGTYPE_NUM]={            /* エンジン回転数タイプ判定テーブル(Conv)   */
+/*   Default                , 020E                   , 730F                   , 493F                   , 517F                   , 848F                   , 907F                   , 950F                   , 939F                   , 968F                   , 967F                   , 029E                   , 907F                   */
+    {(U1)VDFWRNG_RPM_CONVDEF, (U1)VDFWRNG_RPM_CONVDEF, (U1)VDFWRNG_RPM_CONVDEF, (U1)VDFWRNG_RPM_CONVDEF, (U1)VDFWRNG_RPM_CONVDEF, (U1)VDFWRNG_RPM_CONVDEF, (U1)VDFWRNG_RPM_CONVDEF, (U1)VDFWRNG_RPM_CONVDEF, (U1)VDFWRNG_RPM_CONVDEF, (U1)VDFWRNG_RPM_CONVDEF, (U1)VDFWRNG_RPM_CONVDEF, (U1)VDFWRNG_RPM_CONVDEF, (U1)VDFWRNG_RPM_CONVDEF }, /* Conv. */
+    {(U1)VDFWRNG_RPM_HVDEF,   (U1)VDFWRNG_RPM_HVDEF,   (U1)VDFWRNG_RPM_HVDEF,   (U1)VDFWRNG_RPM_HVDEF,   (U1)VDFWRNG_RPM_HVDEF,   (U1)VDFWRNG_RPM_HVDEF,   (U1)VDFWRNG_RPM_HVDEF,   (U1)VDFWRNG_RPM_HVDEF,   (U1)VDFWRNG_RPM_HVDEF,   (U1)VDFWRNG_RPM_HVDEF,   (U1)VDFWRNG_RPM_HVDEF,   (U1)VDFWRNG_RPM_HVDEF,   (U1)VDFWRNG_RPM_HVDEF   }  /* HV    */
+};
+
+#endif /* #ifndef VDFWRNG_PRM */
+
+/*例子 Instance
+static const ST_ALT_VHCLINFO_MSKTIM_INFO   st_ALT_VHCLINFO_MSKTIM_INFO[ALT_VI_MSKTIM_INFO_MAX] = {
+    {(U1)ALT_VI_TIM_IGON_10V_5S_IDX,      (U1)FALSE, (U2)510, (U2)(5000/ALT_TASK_RATE), (U1)(ALT_VI_DTCTEDGMSK_IGON),     (U1)(ALT_VI_DTCTMSK_IGONEDG)     },   /* IG状態    */
+    {(U1)ALT_VI_TIM_ECRNSTOFF_10V_5S_IDX, (U1)TRUE,  (U2)510, (U2)(5000/ALT_TASK_RATE), (U1)(ALT_VI_DTCTEDGMSK_ECRNSTON), (U1)(ALT_VI_DTCTMSK_ECRNSTOFFEDG)},   /* ST状態    */
+    {(U1)ALT_VI_TIM_RDYON_10V_5S_IDX,     (U1)FALSE, (U2)510, (U2)(5000/ALT_TASK_RATE), (U1)(ALT_VI_DTCTEDGMSK_NOMASK),   (U1)(ALT_VI_DTCTMSK_RDYONEDG    )}    /* READY状態 */
+};
+
+static const U1 u1_ALT_VI_ENGSYS[ALT_VI_ENGSYS_NUM] = {
+                                                                                /* bit1:CONV / bit0:HV                               */
+    (U1)TRUE,                                                                   /* 00:HV                                             */
+    (U1)TRUE,                                                                   /* 01:HV                                             */
+    (U1)FALSE,                                                                  /* 10:CONV                                           */
+    (U1)TRUE                                                                    /* 11:HV                                             */
+};
+*/
+
+/*===================================================================================================================================*/
+/*                                                                                                                                   */
+/*  Change History  :  see  vdfwrng.c                                                                                                */
+/*                                                                                                                                   */
+/*===================================================================================================================================*/
